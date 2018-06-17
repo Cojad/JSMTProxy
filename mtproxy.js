@@ -8,8 +8,8 @@ const exec = require('child_process').exec;
 const process = require('process');
 const fs = require('fs');
 
-const CON_TIMEOUT = 5 * 60000; //5 Mins
-const REPORT_CON_SEC = 10;
+const CON_TIMEOUT = 1 * 10000;
+const REPORT_CON_SEC = 1;
 const MIN_IDLE_SERVERS = 4;
 
 exec('/usr/bin/prlimit --pid ' + process.pid + ' --nofile=81920:81920', (error, stdout, stderr) => {});
@@ -17,6 +17,7 @@ exec('/usr/bin/prlimit --pid ' + process.pid + ' --nofile=81920:81920', (error, 
 var client_cons = [];
 var telegram_servers = ["149.154.175.50", "149.154.167.51", "149.154.175.100", "149.154.167.91", "149.154.171.5"];
 var telegram_idle_num = [MIN_IDLE_SERVERS, MIN_IDLE_SERVERS, MIN_IDLE_SERVERS, MIN_IDLE_SERVERS, MIN_IDLE_SERVERS];
+var protocolType = 1;
 
 var server_idle_cons = [];
 for (let i = 0; i < telegram_servers.length; i++) {
@@ -28,7 +29,6 @@ for (let i = 0; i < telegram_servers.length; i++) {
 	con_count.push(0);
 }
 
-var configObj = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
 function reverseInplace (buffer) {
   for (var i = 0, j = buffer.length - 1; i < j; ++i, --j) {
@@ -58,9 +58,13 @@ function create_idle_server(id, ip) {
 				val != 0x54534f50 &&
 				val != 0x20544547 &&
 				val != 0x4954504f &&
-				val != 0xeeeeeeee &&
 				val2 != 0x00000000) {
-				random_buf[56] = random_buf[57] = random_buf[58] = random_buf[59] = 0xef;
+					if (protocolType == 1){
+						random_buf[56] = random_buf[57] = random_buf[58] = random_buf[59] = 0xef;
+					}else{
+						random_buf[56] = random_buf[57] = random_buf[58] = random_buf[59] = 0xee;
+					}
+				
 				break;
 			}
 			random_buf = crypto.randomBytes(64);
@@ -116,7 +120,8 @@ function create_idle_server(id, ip) {
 }
 
 setInterval(() => {
-	console.log('Connections per second:', Math.ceil((con_count[0] + con_count[1] + con_count[2] + con_count[3] + con_count[4]) / REPORT_CON_SEC), 'DC1:', Math.ceil(con_count[0] / REPORT_CON_SEC), 'DC2:', Math.ceil(con_count[1] / REPORT_CON_SEC), 'DC3:', Math.ceil(con_count[2] / REPORT_CON_SEC), 'DC4:', Math.ceil(con_count[3] / REPORT_CON_SEC), 'DC5:', Math.ceil(con_count[4] / REPORT_CON_SEC));
+//	console.log(sockets)
+//	console.log('Connections per second:', Math.ceil((con_count[0] + con_count[1] + con_count[2] + con_count[3] + con_count[4]) / REPORT_CON_SEC), 'DC1:', Math.ceil(con_count[0] / REPORT_CON_SEC), 'DC2:', Math.ceil(con_count[1] / REPORT_CON_SEC), 'DC3:', Math.ceil(con_count[2] / REPORT_CON_SEC), 'DC4:', Math.ceil(con_count[3] / REPORT_CON_SEC), 'DC5:', Math.ceil(con_count[4] / REPORT_CON_SEC));
 	let n = 0;
 	for (let i = 0; i < telegram_servers.length; i++) {
 		n = Math.ceil(con_count[i] / REPORT_CON_SEC);
@@ -134,15 +139,44 @@ setInterval(() => {
 	}
 }, 20);
 
+
+
+configs=require("./config.json");
+for(let i=0;i<configs.length;i++)
+{
+	((config)=>{
+	let sockets={};
+	function isconnectionpermitted(ip)
+{
+	//var arr_clients=[];
+	for(var key in sockets)
+	{
+		if(sockets[key]&&key!==ip)
+		return false;
+	}
+	return true;
+	//return (arr_clients.length>0?(arr_clients):false);
+}
+	//let config=configs[i];
 net.createServer(function(socket) {
+	if(!config.unlimited&&socket.remoteAddress&&!isconnectionpermitted(socket.remoteAddress))
+	socket.destroy();
+	
+	if(socket.remoteAddress)
+	sockets[socket.remoteAddress]=1;
+  //console.log('New connection from ' + address + ':' + address);
 
 	socket.setTimeout(CON_TIMEOUT);
 
 	socket.on('error', (err) => {
+		if(socket.remoteAddress)
+		sockets[socket.remoteAddress]=0;
 		socket.destroy();
 	});
 
 	socket.on('timeout', () => {
+		if(socket.remoteAddress)
+		sockets[socket.remoteAddress]=0;
 		socket.destroy();
 	});
 
@@ -150,17 +184,26 @@ net.createServer(function(socket) {
 		if (socket.server_socket != null) {
 			socket.server_socket.destroy();
 		}
+		if(socket.remoteAddress)
+		sockets[socket.remoteAddress]=0;
 	});
 
 	socket.on('data', function(data) {
-
+if(socket.remoteAddress)
+	sockets[socket.remoteAddress]=1;
+	
 		if (socket.init == null && (data.length == 41 || data.length == 56)) {
 			let client_ip = socket.remoteAddress.substr(7, socket.remoteAddress.length);
+			if(socket.remoteAddress)
+		sockets[socket.remoteAddress]=0;
 			socket.destroy();
+			
 			return;
 		}
 
 		if (socket.init == null && data.length < 64) {
+			if(socket.remoteAddress)
+		sockets[socket.remoteAddress]=0;
 			socket.destroy();
 			return;
 		}
@@ -186,7 +229,7 @@ net.createServer(function(socket) {
 			let encryptIv_client = Buffer.allocUnsafe(16);
 			keyIv.copy(encryptIv_client, 0, 32);
 
-			let binSecret = Buffer.from(configObj.secret, 'hex');
+			let binSecret = Buffer.from(config.secret, 'hex');
 
 			decryptKey_client = crypto.createHash('sha256').update(Buffer.concat([decryptKey_client, binSecret])).digest();
 			encryptKey_client = crypto.createHash('sha256').update(Buffer.concat([encryptKey_client, binSecret])).digest();
@@ -196,15 +239,24 @@ net.createServer(function(socket) {
 
 			let dec_auth_packet = socket.cipher_dec_client.update(buf64);
 			socket.dcId = Math.abs(dec_auth_packet.readInt16LE(60)) - 1;
-
-			for (var i = 0; i < 4; i++) {
-				if (dec_auth_packet[56 + i] != 0xef) {
-					socket.destroy();
-					return;
-				}
-			}
+			if (dec_auth_packet[56 + 0] == 0xef && dec_auth_packet[56 + 1] == 0xef && dec_auth_packet[56 + 2] == 0xef && dec_auth_packet[56 + 3] == 0xef)
+            {
+                protocolType = 1;
+            }
+            else if (dec_auth_packet[56 + 0] == 0xee && dec_auth_packet[56 + 1] == 0xee && dec_auth_packet[56 + 2] == 0xee && dec_auth_packet[56 + 3] == 0xee)
+            {
+                protocolType = 2;
+            }
+            else
+            {
+                sockets[socket.remoteAddress]=0;
+				socket.destroy();
+				return;
+            }
 
 			if (socket.dcId > 4 || socket.dcId < 0) {
+				if(socket.remoteAddress)
+				sockets[socket.remoteAddress]=0;
 				socket.destroy();
 				return;
 			}
@@ -217,7 +269,6 @@ net.createServer(function(socket) {
 
 		if (socket.server_socket == null) {
 			if (server_idle_cons[socket.dcId].length > 0) {
-
 				do {
 					socket.server_socket = server_idle_cons[socket.dcId].shift();
 					if (!socket.server_socket.writable) {
@@ -231,6 +282,8 @@ net.createServer(function(socket) {
 				socket.server_socket.client_socket = socket;
 			} else {
 				console.log('SHORT ON IDLE SERVER CONNECTIONS! dcId:', socket.dcId + 1);
+				if(socket.remoteAddress)
+		sockets[socket.remoteAddress]=0;
 				socket.destroy();
 				return;
 			}
@@ -241,9 +294,12 @@ net.createServer(function(socket) {
 			socket.server_socket.write(enc_payload, () => {
 			});
 		} else {
+			if(socket.remoteAddress)
+		sockets[socket.remoteAddress]=0;
 			socket.server_socket.destroy();
 			socket.destroy();
 		}
 	});
 
-}).listen(configObj.port);
+}).listen({port:config.port});})(configs[i]);
+}
