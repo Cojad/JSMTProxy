@@ -1,6 +1,6 @@
-const version='1.0.1';
-const author='FreedomPrevails';
-const github='https://github.com/FreedomPrevails/JSMTProxy';
+const version = '1.0.2';
+const author = 'Cinohee';
+const github = 'https://github.com/cinohee/JSMTProxy';
 
 const net = require('net');
 const crypto = require('crypto');
@@ -12,13 +12,12 @@ const CON_TIMEOUT = 1 * 30000;
 const REPORT_CON_SEC = 1;
 const MIN_IDLE_SERVERS = 4;
 
-exec('/usr/bin/prlimit --pid ' + process.pid + ' --nofile=81920:81920', (error, stdout, stderr) => {});
+exec('/usr/bin/prlimit --pid ' + process.pid + ' --nofile=81920:81920', (error, stdout, stderr) => { });
 
 var client_cons = [];
 var telegram_servers = ["149.154.175.50", "149.154.167.51", "149.154.175.100", "149.154.167.91", "149.154.171.5"];
 var telegram_idle_num = [MIN_IDLE_SERVERS, MIN_IDLE_SERVERS, MIN_IDLE_SERVERS, MIN_IDLE_SERVERS, MIN_IDLE_SERVERS];
 var protocolType = 1;
-
 var server_idle_cons = [];
 for (let i = 0; i < telegram_servers.length; i++) {
 	server_idle_cons[i] = [];
@@ -30,12 +29,12 @@ for (let i = 0; i < telegram_servers.length; i++) {
 }
 
 
-function reverseInplace (buffer) {
-  for (var i = 0, j = buffer.length - 1; i < j; ++i, --j) {
-    var t = buffer[j]
-    buffer[j] = buffer[i]
-    buffer[i] = t
-  }
+function reverseInplace(buffer) {
+	for (var i = 0, j = buffer.length - 1; i < j; ++i, --j) {
+		var t = buffer[j]
+		buffer[j] = buffer[i]
+		buffer[i] = t
+	}
 }
 
 function create_idle_server(id, ip) {
@@ -59,12 +58,12 @@ function create_idle_server(id, ip) {
 				val != 0x20544547 &&
 				val != 0x4954504f &&
 				val2 != 0x00000000) {
-					if (protocolType == 1){
-						random_buf[56] = random_buf[57] = random_buf[58] = random_buf[59] = 0xef;
-					}else{
-						random_buf[56] = random_buf[57] = random_buf[58] = random_buf[59] = 0xee;
-					}
-				
+				if (protocolType == 1) {
+					random_buf[56] = random_buf[57] = random_buf[58] = random_buf[59] = 0xef;
+				}
+				else {
+					random_buf[56] = random_buf[57] = random_buf[58] = random_buf[59] = 0xee;
+				}
 				break;
 			}
 			random_buf = crypto.randomBytes(64);
@@ -93,7 +92,7 @@ function create_idle_server(id, ip) {
 		let packet_enc = client.cipher_enc_server.update(random_buf);
 		random_buf.copy(packet_enc, 0, 0, 56);
 
-		client.write(packet_enc, function() {
+		client.write(packet_enc, function () {
 			server_idle_cons[id].push(client);
 		});
 	});
@@ -120,8 +119,8 @@ function create_idle_server(id, ip) {
 }
 
 setInterval(() => {
-//	console.log(sockets)
-//	console.log('Connections per second:', Math.ceil((con_count[0] + con_count[1] + con_count[2] + con_count[3] + con_count[4]) / REPORT_CON_SEC), 'DC1:', Math.ceil(con_count[0] / REPORT_CON_SEC), 'DC2:', Math.ceil(con_count[1] / REPORT_CON_SEC), 'DC3:', Math.ceil(con_count[2] / REPORT_CON_SEC), 'DC4:', Math.ceil(con_count[3] / REPORT_CON_SEC), 'DC5:', Math.ceil(con_count[4] / REPORT_CON_SEC));
+	//	console.log(sockets)
+	//	console.log('Connections per second:', Math.ceil((con_count[0] + con_count[1] + con_count[2] + con_count[3] + con_count[4]) / REPORT_CON_SEC), 'DC1:', Math.ceil(con_count[0] / REPORT_CON_SEC), 'DC2:', Math.ceil(con_count[1] / REPORT_CON_SEC), 'DC3:', Math.ceil(con_count[2] / REPORT_CON_SEC), 'DC4:', Math.ceil(con_count[3] / REPORT_CON_SEC), 'DC5:', Math.ceil(con_count[4] / REPORT_CON_SEC));
 	let n = 0;
 	for (let i = 0; i < telegram_servers.length; i++) {
 		n = Math.ceil(con_count[i] / REPORT_CON_SEC);
@@ -141,165 +140,160 @@ setInterval(() => {
 
 
 
-configs=require("./config.json");
-for(let i=0;i<configs.length;i++)
-{
-	((config)=>{
-	let sockets={};
-	function isconnectionpermitted(ip)
-{
-	//var arr_clients=[];
-	for(var key in sockets)
-	{
-		if(sockets[key]&&key!==ip)
-		return false;
-	}
-	return true;
-	//return (arr_clients.length>0?(arr_clients):false);
-}
-	//let config=configs[i];
-net.createServer(function(socket) {
-	if(!config.unlimited&&socket.remoteAddress&&!isconnectionpermitted(socket.remoteAddress))
-	socket.destroy();
-	
-	if(socket.remoteAddress)
-	sockets[socket.remoteAddress]=1;
-  //console.log('New connection from ' + address + ':' + address);
-
-	socket.setTimeout(CON_TIMEOUT);
-
-	socket.on('error', (err) => {
-		if(socket.remoteAddress)
-		sockets[socket.remoteAddress]=0;
-		socket.destroy();
-	});
-
-	socket.on('timeout', () => {
-		if(socket.remoteAddress)
-		sockets[socket.remoteAddress]=0;
-		socket.destroy();
-	});
-
-	socket.on('end', function() {
-		if (socket.server_socket != null) {
-			socket.server_socket.destroy();
-		}
-		if(socket.remoteAddress)
-		sockets[socket.remoteAddress]=0;
-	});
-
-	socket.on('data', function(data) {
-if(socket.remoteAddress)
-	sockets[socket.remoteAddress]=1;
-	
-		if (socket.init == null && (data.length == 41 || data.length == 56)) {
-			let client_ip = socket.remoteAddress.substr(7, socket.remoteAddress.length);
-			if(socket.remoteAddress)
-		sockets[socket.remoteAddress]=0;
-			socket.destroy();
-			
-			return;
-		}
-
-		if (socket.init == null && data.length < 64) {
-			if(socket.remoteAddress)
-		sockets[socket.remoteAddress]=0;
-			socket.destroy();
-			return;
-		}
-
-		if (socket.init == null) {
-			let buf64 = Buffer.allocUnsafe(64);
-			data.copy(buf64);
-
-			let keyIv = Buffer.allocUnsafe(48);
-			buf64.copy(keyIv, 0, 8);
-
-			let decryptKey_client = Buffer.allocUnsafe(32);
-			keyIv.copy(decryptKey_client, 0, 0);
-
-			let decryptIv_client = Buffer.allocUnsafe(16);
-			keyIv.copy(decryptIv_client, 0, 32);
-
-			reverseInplace(keyIv);
-
-			let encryptKey_client = Buffer.allocUnsafe(32);
-			keyIv.copy(encryptKey_client, 0, 0);
-
-			let encryptIv_client = Buffer.allocUnsafe(16);
-			keyIv.copy(encryptIv_client, 0, 32);
-
-			let binSecret = Buffer.from(config.secret, 'hex');
-
-			decryptKey_client = crypto.createHash('sha256').update(Buffer.concat([decryptKey_client, binSecret])).digest();
-			encryptKey_client = crypto.createHash('sha256').update(Buffer.concat([encryptKey_client, binSecret])).digest();
-
-			socket.cipher_dec_client = crypto.createCipheriv('aes-256-ctr', decryptKey_client, decryptIv_client);
-			socket.cipher_enc_client = crypto.createCipheriv('aes-256-ctr', encryptKey_client, encryptIv_client);
-
-			let dec_auth_packet = socket.cipher_dec_client.update(buf64);
-			socket.dcId = Math.abs(dec_auth_packet.readInt16LE(60)) - 1;
-			if (dec_auth_packet[56 + 0] == 0xef && dec_auth_packet[56 + 1] == 0xef && dec_auth_packet[56 + 2] == 0xef && dec_auth_packet[56 + 3] == 0xef)
-            {
-                protocolType = 1;
-            }
-            else if (dec_auth_packet[56 + 0] == 0xee && dec_auth_packet[56 + 1] == 0xee && dec_auth_packet[56 + 2] == 0xee && dec_auth_packet[56 + 3] == 0xee)
-            {
-                protocolType = 2;
-            }
-            else
-            {
-                sockets[socket.remoteAddress]=0;
-				socket.destroy();
-				return;
-            }
-
-			if (socket.dcId > 4 || socket.dcId < 0) {
-				if(socket.remoteAddress)
-				sockets[socket.remoteAddress]=0;
-				socket.destroy();
-				return;
+configs = require("./config.json");
+for (let i = 0; i < configs.length; i++) {
+	((config) => {
+		let sockets = {};
+		function isconnectionpermitted(ip) {
+			//var arr_clients=[];
+			for (var key in sockets) {
+				if (sockets[key] && key !== ip)
+					return false;
 			}
-
-			data = data.slice(64, data.length);
-			socket.init = true;
+			return true;
+			//return (arr_clients.length>0?(arr_clients):false);
 		}
-
-		let payload = socket.cipher_dec_client.update(data);
-
-		if (socket.server_socket == null) {
-			if (server_idle_cons[socket.dcId].length > 0) {
-				do {
-					socket.server_socket = server_idle_cons[socket.dcId].shift();
-					if (!socket.server_socket.writable) {
-						socket.server_socket.destroy();
-					}
-				} while (!socket.server_socket.writable);
-
-				con_count[socket.dcId]++;
-				socket.server_socket.setTimeout(CON_TIMEOUT);
-				socket.server_socket.setKeepAlive(false);
-				socket.server_socket.client_socket = socket;
-			} else {
-				console.log('SHORT ON IDLE SERVER CONNECTIONS! dcId:', socket.dcId + 1);
-				if(socket.remoteAddress)
-		sockets[socket.remoteAddress]=0;
+		//let config=configs[i];
+		net.createServer(function (socket) {
+			if (!config.unlimited && socket.remoteAddress && !isconnectionpermitted(socket.remoteAddress))
 				socket.destroy();
-				return;
-			}
-		}
 
-		let enc_payload = socket.server_socket.cipher_enc_server.update(payload);
-		if (socket.server_socket.writable) {
-			socket.server_socket.write(enc_payload, () => {
+			if (socket.remoteAddress)
+				sockets[socket.remoteAddress] = 1;
+			//console.log('New connection from ' + address + ':' + address);
+
+			socket.setTimeout(CON_TIMEOUT);
+
+			socket.on('error', (err) => {
+				if (socket.remoteAddress)
+					sockets[socket.remoteAddress] = 0;
+				socket.destroy();
 			});
-		} else {
-			if(socket.remoteAddress)
-		sockets[socket.remoteAddress]=0;
-			socket.server_socket.destroy();
-			socket.destroy();
-		}
-	});
 
-}).listen({port:config.port});})(configs[i]);
-} 
+			socket.on('timeout', () => {
+				if (socket.remoteAddress)
+					sockets[socket.remoteAddress] = 0;
+				socket.destroy();
+			});
+
+			socket.on('end', function () {
+				if (socket.server_socket != null) {
+					socket.server_socket.destroy();
+				}
+				if (socket.remoteAddress)
+					sockets[socket.remoteAddress] = 0;
+			});
+
+			socket.on('data', function (data) {
+				if (socket.remoteAddress)
+					sockets[socket.remoteAddress] = 1;
+
+				if (socket.init == null && (data.length == 41 || data.length == 56)) {
+					let client_ip = socket.remoteAddress.substr(7, socket.remoteAddress.length);
+					if (socket.remoteAddress)
+						sockets[socket.remoteAddress] = 0;
+					socket.destroy();
+
+					return;
+				}
+
+				if (socket.init == null && data.length < 64) {
+					if (socket.remoteAddress)
+						sockets[socket.remoteAddress] = 0;
+					socket.destroy();
+					return;
+				}
+
+				if (socket.init == null) {
+					let buf64 = Buffer.allocUnsafe(64);
+					data.copy(buf64);
+
+					let keyIv = Buffer.allocUnsafe(48);
+					buf64.copy(keyIv, 0, 8);
+
+					let decryptKey_client = Buffer.allocUnsafe(32);
+					keyIv.copy(decryptKey_client, 0, 0);
+
+					let decryptIv_client = Buffer.allocUnsafe(16);
+					keyIv.copy(decryptIv_client, 0, 32);
+
+					reverseInplace(keyIv);
+
+					let encryptKey_client = Buffer.allocUnsafe(32);
+					keyIv.copy(encryptKey_client, 0, 0);
+
+					let encryptIv_client = Buffer.allocUnsafe(16);
+					keyIv.copy(encryptIv_client, 0, 32);
+
+					let binSecret = Buffer.from(config.secret, 'hex');
+
+					decryptKey_client = crypto.createHash('sha256').update(Buffer.concat([decryptKey_client, binSecret])).digest();
+					encryptKey_client = crypto.createHash('sha256').update(Buffer.concat([encryptKey_client, binSecret])).digest();
+
+					socket.cipher_dec_client = crypto.createCipheriv('aes-256-ctr', decryptKey_client, decryptIv_client);
+					socket.cipher_enc_client = crypto.createCipheriv('aes-256-ctr', encryptKey_client, encryptIv_client);
+
+					let dec_auth_packet = socket.cipher_dec_client.update(buf64);
+					socket.dcId = Math.abs(dec_auth_packet.readInt16LE(60)) - 1;
+					//////
+					_protocoltypes = [null, 0xef, 0xee]
+					let buffers_same = [dec_auth_packet[56 + 0], dec_auth_packet[56 + 1], dec_auth_packet[56 + 2], dec_auth_packet[56 + 3]].reduce((a, b) => { return a == b ? a : false })
+					if (buffers_same && _protocoltypes.indexOf(buffers_same) > 0)
+						protocolType = _protocoltypes.indexOf(buffers_same);
+					else {
+						if (socket.remoteAddress)
+							sockets[socket.remoteAddress] = 0;
+						socket.destroy();
+						return;
+					}
+					/////
+					if (socket.dcId > 4 || socket.dcId < 0) {
+						if (socket.remoteAddress)
+							sockets[socket.remoteAddress] = 0;
+						socket.destroy();
+						return;
+					}
+
+					data = data.slice(64, data.length);
+					socket.init = true;
+				}
+
+				let payload = socket.cipher_dec_client.update(data);
+
+				if (socket.server_socket == null) {
+					if (server_idle_cons[socket.dcId].length > 0) {
+						do {
+							socket.server_socket = server_idle_cons[socket.dcId].shift();
+							if (!socket.server_socket.writable) {
+								socket.server_socket.destroy();
+							}
+						} while (!socket.server_socket.writable);
+
+						con_count[socket.dcId]++;
+						socket.server_socket.setTimeout(CON_TIMEOUT);
+						socket.server_socket.setKeepAlive(false);
+						socket.server_socket.client_socket = socket;
+					} else {
+						console.log('SHORT ON IDLE SERVER CONNECTIONS! dcId:', socket.dcId + 1);
+						if (socket.remoteAddress)
+							sockets[socket.remoteAddress] = 0;
+						socket.destroy();
+						return;
+					}
+				}
+
+				let enc_payload = socket.server_socket.cipher_enc_server.update(payload);
+				if (socket.server_socket.writable) {
+					socket.server_socket.write(enc_payload, () => {
+					});
+				} else {
+					if (socket.remoteAddress)
+						sockets[socket.remoteAddress] = 0;
+					socket.server_socket.destroy();
+					socket.destroy();
+				}
+			});
+
+		}).listen({ port: config.port });
+	})(configs[i]);
+}
