@@ -8,7 +8,7 @@ const exec = require('child_process').exec;
 const process = require('process');
 const fs = require('fs');
 
-const CON_TIMEOUT = 1 * 10000;
+const CON_TIMEOUT = 1 * 30000;
 const REPORT_CON_SEC = 1;
 const MIN_IDLE_SERVERS = 4;
 
