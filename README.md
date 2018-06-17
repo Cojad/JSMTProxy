@@ -39,7 +39,7 @@ Enter JSMTProxy directory and edit config file (config.json) if you wish. You ca
     }
 Start the app in cluster mode using pm2:
 ```
-$> pm2 start mtproxy.js -i max
+$> pm2 start app.json
 ```
 You can use pm2 to list running processes and check their logs:
 ```
