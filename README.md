@@ -61,7 +61,7 @@ Extract the zip file into a new folder. Edit config.json (as explained above) if
 
 Start the proxy server from "Command Prompt" by following command:
 ```
-C:\> pm2 start mtproxy.js -i max
+C:\> pm2 start app.json
 ```
 **Note: You may need to open the proxy port number in your Windows firewall in order for it to accept connections.**
 
