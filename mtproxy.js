@@ -1,6 +1,6 @@
 const version = '1.0.2';
-const author = 'Cinohee';
-const github = 'https://github.com/cinohee/JSMTProxy';
+const author = 'masterprogrammer513';
+const github = 'https://github.com/masterprogrammer513/JSMTProxy';
 
 const net = require('net');
 const crypto = require('crypto');
