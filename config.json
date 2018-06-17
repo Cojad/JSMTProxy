@@ -1,4 +1,4 @@
 [
   {"name":"user","port":7000,"secret":"3a235687c94960399a34a67b1556369d","unlimited":false},
-  {"name":"user2","port":7001,"secret":"3a235687c94968399a34a67b1556369d","unlimited":false},
+  {"name":"user2","port":7001,"secret":"3a235687c94968399a34a67b1556369d","unlimited":true},
 ]
